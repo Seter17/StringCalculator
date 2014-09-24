@@ -50,3 +50,7 @@ Temporary Items
 *.ilk
 *.obj
 *.sdf
+*.user
+*.tlog
+*.idb
+*.filters
