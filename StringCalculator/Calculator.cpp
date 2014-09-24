@@ -18,23 +18,42 @@ Calculator::Evaluate(const std::string& expression, int& index) {
 
     bool isPriorityOperationPending = false;
     std::string number_str;
+    std::string operation_str;
     for (index; index < _expression.length(); ++index) {
-        char ch = _expression[index];
-        if (isdigit(ch) || ch == '.')
-            number_str.push_back(ch);
+        if (isdigit(_expression[index]) || _expression[index] == '.')
+            number_str.push_back(_expression[index]);
         else {
-            if (ch == ')') 
-                break;
-            if (ch == '(') {
+            if (_expression[index] == '(') {
                 _AddNumber(Evaluate(_expression, ++index), numbers, operations, isPriorityOperationPending);
                 ++index;
             }
             else
                 _AddNumber(number_str, numbers, operations, isPriorityOperationPending);
+            
+            if (_expression[index] == ')')
+                break;
 
-            OPERATION_TYPE operation = Calculator::_ParseBinaryOperation(_expression[index]);
+            OPERATION_TYPE operation = Calculator::_ParseSymbolOperation(_expression[index]);
+            if (operation == UKNOWN) {
+                //parse until next digit
+                while (index != _expression.length() && _expression[index] != '(' && _expression[index] != '.' && !isdigit(_expression[index])) {
+                    operation_str.push_back(_expression[index]);
+                    ++index;
+                }
+                --index;
+                operation = Calculator::_ParseWordOperation(operation_str);
+                if (operation == UKNOWN) {
+                    //exception for sure;
+                }
+                operation_str.clear();
+            }
+
             operations.push_back(operation);
-            if (_IsHighPriorityOperator(operation)) {
+            //negative number case
+            if (operation == SUBSTRACTION && numbers.size() == 0)
+                numbers.push_back(0.0f);
+
+            if (_IsHighPriorityOperation(operation)) {
                 isPriorityOperationPending = true;
             }
         }
@@ -43,26 +62,13 @@ Calculator::Evaluate(const std::string& expression, int& index) {
     Calculator::_AddNumber(number_str, numbers, operations, isPriorityOperationPending);
 
     //vectors contains only numbers and simple binary operations
-    float left = numbers[0];
-    numbers.erase(numbers.begin());
-    while (numbers.size() > 0)
-    {
-      
-        float right = numbers[0];
-        auto operation = operations[0];
+    return _Unwind(numbers, operations);
 
-        operations.erase(operations.begin());
-        numbers.erase(numbers.begin());
-
-        left = Calculator::_PerformOperation(left, right, operation);
-    }
-
-    return left;
 }
 
 /*static*/
 Calculator::OPERATION_TYPE
-Calculator::_ParseBinaryOperation(char ch) {
+Calculator::_ParseSymbolOperation(char ch) {
     switch (ch) {
         case '+':
             return ADDITION;
@@ -82,6 +88,18 @@ Calculator::_ParseBinaryOperation(char ch) {
     }
 }
 
+
+/*static*/
+Calculator::OPERATION_TYPE
+Calculator::_ParseWordOperation(const std::string& word) {
+    if (word == "sin") {
+        return SIN;
+    }
+    if (word == "cos") {
+        return COS;
+    }
+    return UKNOWN;
+}
 
 /*static*/
 float
@@ -106,10 +124,10 @@ Calculator::_PerformOperation(float left, float right, OPERATION_TYPE operation)
 float
 Calculator::_PerformOperation(float value, OPERATION_TYPE operation) {
     if (operation == SIN) {
-        return sin(value);
+        return sin(value*PI / 180);
     }
     if (operation == COS) {
-        return cos(value);
+        return cos(value*PI / 180);
     }
 
     throw 3;
@@ -117,27 +135,60 @@ Calculator::_PerformOperation(float value, OPERATION_TYPE operation) {
 
 /*static*/
 bool
-Calculator::_IsHighPriorityOperator(OPERATION_TYPE operation) {
-    return operation == MULTIPLICATION || operation == DIVISION;
+Calculator::_IsHighPriorityOperation(OPERATION_TYPE operation) {
+    return operation == MULTIPLICATION || operation == DIVISION || operation == SIN || operation == COS;
 }
 
 /*static*/
-void 
+bool
+Calculator::_IsUnaryOperation(OPERATION_TYPE operation) {
+    return operation == SIN || operation == COS;
+}
+
+/*static*/
+void
 Calculator::_AddNumber(std::string &number_str, std::vector<float> &numbers, std::vector<OPERATION_TYPE> &operations, bool& isPriorityOperationPending) {
-    float number = number_str.length() > 0 ? atof(number_str.c_str()) : 0.0f;
+    if (number_str.length() == 0)
+        return;
+    float number =  atof(number_str.c_str());
     number_str.clear();
     _AddNumber(number, numbers, operations, isPriorityOperationPending);
 }
 
 /*static*/
-void 
+void
 Calculator::_AddNumber(float number, std::vector<float> &numbers, std::vector<OPERATION_TYPE> &operations, bool &isPriorityOperationPending) {
     if (isPriorityOperationPending) {
-        float left = numbers.back();
-        numbers.pop_back();
-        number = _PerformOperation(left, number, operations.back());
+        auto operation = operations.back();
         operations.pop_back();
+
+        if (!Calculator::_IsUnaryOperation(operation)) {
+            float left = numbers.back();
+            numbers.pop_back();
+            number = _PerformOperation(left, number, operation);
+        }
+        else {
+            number = _PerformOperation(number, operation);
+        }
+
         isPriorityOperationPending = false;
     }
     numbers.push_back(number);
+}
+
+float Calculator::_Unwind(std::vector<float> &numbers, std::vector<OPERATION_TYPE> &operations) {
+    float left = numbers[0];
+    numbers.erase(numbers.begin());
+    while (numbers.size() > 0) {
+
+        float right = numbers[0];
+        auto operation = operations[0];
+
+        operations.erase(operations.begin());
+        numbers.erase(numbers.begin());
+
+        left = Calculator::_PerformOperation(left, right, operation);
+    }
+
+    return left;
 }
