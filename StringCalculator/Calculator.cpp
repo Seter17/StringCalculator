@@ -16,45 +16,41 @@ Calculator::Evaluate(const std::string& expression) {
     std::vector<float> numbers;
     std::vector<OPERATION_TYPE> operations;
 
+    bool isPriorityOperationPending = false;
     std::string number_str;
     for (int i = 0; i < _expression.length(); ++i) {
         char ch = _expression[i];
         if (isdigit(ch) || ch == '.')
             number_str.push_back(ch);
         else {
-            float number = number_str.length() > 0 ? atof(number_str.c_str()) : 0.0f;
-            auto operation = Calculator::_ParseBinaryOperation(ch);
+            _AddNumber(number_str, numbers, operations, isPriorityOperationPending);
+
+            OPERATION_TYPE operation = Calculator::_ParseBinaryOperation(ch);
+            operations.push_back(operation);
+            if (_IsHighPriorityOperator(operation)) {
+                isPriorityOperationPending = true;
+            }
         }
     }
 
+    Calculator::_AddNumber(number_str, numbers, operations, isPriorityOperationPending);
 
-    return _EvaluateBraceslessExpression(_expression);
-}
+    //vectors contains only numbers and simple binary operations
+    float left = numbers[0];
+    numbers.erase(numbers.begin());
+    while (numbers.size() > 0)
+    {
+      
+        float right = numbers[0];
+        auto operation = operations[0];
 
-/*static*/
-float
-Calculator::_EvaluateBraceslessExpression(const std::string& expression) {
-    std::string leftOperand;
-    int operationIndex = -1;
-    for (int i = 0; i < expression.length(); ++i) {
-        char ch = expression[i];
-        if (isdigit(ch) || ch == '.') {
-            leftOperand.push_back(ch);
-        }
-        else {
-            operationIndex = i;
-            break;
-        }
+        operations.erase(operations.begin());
+        numbers.erase(numbers.begin());
+
+        left = Calculator::_PerformOperation(left, right, operation);
     }
 
-    float result = leftOperand.length() > 0 ? atof(leftOperand.c_str()) : 0.0f;
-    if (operationIndex != -1) {
-        Calculator::OPERATION_TYPE operation = Calculator::_ParseBinaryOperation(expression[operationIndex]);
-        float right = _EvaluateBraceslessExpression(expression.substr(operationIndex+1));
-        result = Calculator::_PerformOperation(result, right, operation);
-    }
-        
-    return result;
+    return left;
 }
 
 /*static*/
@@ -79,6 +75,7 @@ Calculator::_ParseBinaryOperation(char ch) {
     }
 }
 
+
 /*static*/
 float
 Calculator::_PerformOperation(float left, float right, OPERATION_TYPE operation) {
@@ -98,6 +95,7 @@ Calculator::_PerformOperation(float left, float right, OPERATION_TYPE operation)
     throw 2;
 }
 
+/*static*/
 float
 Calculator::_PerformOperation(float value, OPERATION_TYPE operation) {
     if (operation == SIN) {
@@ -108,4 +106,25 @@ Calculator::_PerformOperation(float value, OPERATION_TYPE operation) {
     }
 
     throw 3;
+}
+
+/*static*/
+bool
+Calculator::_IsHighPriorityOperator(OPERATION_TYPE operation) {
+    return operation == MULTIPLICATION || operation == DIVISION;
+}
+
+/*static*/
+void 
+Calculator::_AddNumber(std::string &number_str, std::vector<float> &numbers, std::vector<OPERATION_TYPE> &operations, bool& isPriorityOperationPending) {
+    float number = number_str.length() > 0 ? atof(number_str.c_str()) : 0.0f;
+    if (isPriorityOperationPending) {
+        float left = numbers.back();
+        numbers.pop_back();
+        number = _PerformOperation(left, number, operations.back());
+        operations.pop_back();
+        isPriorityOperationPending = false;
+    }
+    number_str.clear();
+    numbers.push_back(number);
 }
