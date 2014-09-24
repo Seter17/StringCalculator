@@ -9,7 +9,7 @@ Calculator::~Calculator() {}
 
 /*static*/
 float
-Calculator::Evaluate(const std::string& expression) {
+Calculator::Evaluate(const std::string& expression, int& index) {
     std::string _expression = expression; //we do not want to change input data
     _expression.erase(std::remove_if(_expression.begin(), _expression.end(), isspace), _expression.end());
 
@@ -18,14 +18,21 @@ Calculator::Evaluate(const std::string& expression) {
 
     bool isPriorityOperationPending = false;
     std::string number_str;
-    for (int i = 0; i < _expression.length(); ++i) {
-        char ch = _expression[i];
+    for (index; index < _expression.length(); ++index) {
+        char ch = _expression[index];
         if (isdigit(ch) || ch == '.')
             number_str.push_back(ch);
         else {
-            _AddNumber(number_str, numbers, operations, isPriorityOperationPending);
+            if (ch == ')') 
+                break;
+            if (ch == '(') {
+                _AddNumber(Evaluate(_expression, ++index), numbers, operations, isPriorityOperationPending);
+                ++index;
+            }
+            else
+                _AddNumber(number_str, numbers, operations, isPriorityOperationPending);
 
-            OPERATION_TYPE operation = Calculator::_ParseBinaryOperation(ch);
+            OPERATION_TYPE operation = Calculator::_ParseBinaryOperation(_expression[index]);
             operations.push_back(operation);
             if (_IsHighPriorityOperator(operation)) {
                 isPriorityOperationPending = true;
@@ -118,6 +125,13 @@ Calculator::_IsHighPriorityOperator(OPERATION_TYPE operation) {
 void 
 Calculator::_AddNumber(std::string &number_str, std::vector<float> &numbers, std::vector<OPERATION_TYPE> &operations, bool& isPriorityOperationPending) {
     float number = number_str.length() > 0 ? atof(number_str.c_str()) : 0.0f;
+    number_str.clear();
+    _AddNumber(number, numbers, operations, isPriorityOperationPending);
+}
+
+/*static*/
+void 
+Calculator::_AddNumber(float number, std::vector<float> &numbers, std::vector<OPERATION_TYPE> &operations, bool &isPriorityOperationPending) {
     if (isPriorityOperationPending) {
         float left = numbers.back();
         numbers.pop_back();
@@ -125,6 +139,5 @@ Calculator::_AddNumber(std::string &number_str, std::vector<float> &numbers, std
         operations.pop_back();
         isPriorityOperationPending = false;
     }
-    number_str.clear();
     numbers.push_back(number);
 }

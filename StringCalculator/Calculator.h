@@ -8,7 +8,7 @@ public:
     Calculator();
     ~Calculator();
 
-    static float Evaluate(const std::string& expression);
+    static float Evaluate(const std::string& expression,  int& index);
 private:
 
     enum OPERATION_TYPE {
@@ -29,5 +29,8 @@ private:
     static float            _PerformOperation(float left, float right, OPERATION_TYPE operation);
 
     static void             _AddNumber(std::string &number_str, std::vector<float> &numbers, std::vector<OPERATION_TYPE> &operations, bool& isPriorityOperationPending);
+
+    static void             _AddNumber(float number, std::vector<float> &numbers, std::vector<OPERATION_TYPE> &operations, bool &isPriorityOperationPending);
+
 };
 
