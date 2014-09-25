@@ -47,6 +47,8 @@ Calculator::_Evaluate(const std::string& expression, int& index) {
 			if (_expression[index] == '(') {
 				_AddNumber(_Evaluate(_expression, ++index), numbers, operations, isPriorityOperationPending);
 				++index;
+				if (index == _expression.length())
+					break;
 			}
 			else
 				_AddNumber(number_str, numbers, operations, isPriorityOperationPending);
@@ -56,6 +58,7 @@ Calculator::_Evaluate(const std::string& expression, int& index) {
 
 			OPERATION_TYPE operation = Calculator::_ParseSymbolOperation(_expression[index]);
 			if (operation == UKNOWN) {
+				//this is not symbol operation. Ok. Maybe it is key-word operation  then?
 				//parse until next digit
 				while (index != _expression.length() && _expression[index] != '(' && _expression[index] != '.' && !isdigit(_expression[index])) {
 					operation_str.push_back(_expression[index]);
@@ -64,18 +67,20 @@ Calculator::_Evaluate(const std::string& expression, int& index) {
 				--index;
 				operation = Calculator::_ParseWordOperation(operation_str);
 				if (operation == UKNOWN) {
+					//unknown word? Bam! We dead.
 					throw CalculatorException(index);
 				}
 				operation_str.clear();
 			}
 
 			operations.push_back(operation);
-			//negative number case
+			
 			if (numbers.size() == 0) {
-				if (operation == SUBSTRACTION)
+				if (!_IsUnaryOperation(operation) && operation != SUBSTRACTION)
+					//We have binary operation but do not have left operand. Obviously an input data error
+					throw ParseException(index); 
+				else if (operation == SUBSTRACTION)
 					numbers.push_back(0.0f);
-				else
-					throw ParseException(index);
 			}
 				
 
