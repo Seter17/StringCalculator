@@ -32,7 +32,10 @@ Calculator::Evaluate(const std::string& expression, std::string& errorMessage) {
 float
 Calculator::_Evaluate(const std::string& expression, int& index) {
 	std::string _expression = expression; //we do not want to change input data
+	//trim
 	_expression.erase(std::remove_if(_expression.begin(), _expression.end(), isspace), _expression.end());
+	//tolower case because for example sin = Sin = SIN
+	std::transform(_expression.begin(), _expression.end(), _expression.begin(), ::tolower);
 
 	std::vector<float> numbers;
 	std::vector<OPERATION_TYPE> operations;

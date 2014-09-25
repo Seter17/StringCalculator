@@ -8,8 +8,10 @@ int main(int argc,      // Number of strings in array argv
 	char *argv[],   // Array of command-line argument strings
 	char *envp[]) {
 
-	if (argv == 0) {
-		std::cout << "Wtf, man?!" << std::endl;
+	if (argc <= 1) {
+		std::cout << "type arithmetic expression or" << std::endl;
+		std::cout << "keyword 'test' (without quotes) for running tests" << std::endl;
+		return 0;
 	}
 
 	int start = 0;
@@ -27,6 +29,8 @@ int main(int argc,      // Number of strings in array argv
 		cases["2 + 5*(3 - (6 + sin(30)/0) - 3 * 2) -7"] =  "error";
 		cases["-2 + sin(30)"] = "-1.5";
 		cases["sin(30) - 2"] = "-1.5";
+		cases["messed up test case"] = "error";
+		cases["Sin(30) +CoS60"] = "1";
 
 		std::string errorMessage;
 		for (auto testCase: cases)
