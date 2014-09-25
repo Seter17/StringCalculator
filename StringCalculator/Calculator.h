@@ -10,7 +10,7 @@ public:
     Calculator();
     ~Calculator();
 
-    static float Evaluate(const std::string& expression,  int& index);
+	static float Evaluate(const std::string& expression, std::string& errorMessage);
 
 
 private:
@@ -24,6 +24,9 @@ private:
         SIN,
         COS
     };
+
+	static float _Evaluate(const std::string& expression, int& index);
+
     static OPERATION_TYPE   _ParseSymbolOperation(char ch);
 
     static OPERATION_TYPE   _ParseWordOperation(const std::string& ch);
