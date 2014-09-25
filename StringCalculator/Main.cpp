@@ -29,7 +29,9 @@ int main(int argc,      // Number of strings in array argv
 		cases["2 + 5*(3 - (6 + sin(30)/0) - 3 * 2) -7"] =  "error";
 		cases["-2 + sin(30)"] = "-1.5";
 		cases["sin(30) - 2"] = "-1.5";
+		cases["2 + 5*(3 - (6 + 5 - 3 * 2 -7)"] = "error";
 		cases["messed up test case"] = "error";
+		cases["sin(30 - 2"] = "error";
 		cases["Sin(30) +CoS60"] = "1";
 
 		std::string errorMessage;

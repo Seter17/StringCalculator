@@ -25,7 +25,7 @@ private:
         COS
     };
 
-	static float _Evaluate(const std::string& expression, int& index);
+	static float _Evaluate(const std::string& expression, int& index, int& braceCount);
 
     static OPERATION_TYPE   _ParseSymbolOperation(char ch);
 

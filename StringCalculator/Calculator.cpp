@@ -14,8 +14,20 @@ Calculator::~Calculator() {}
 float
 Calculator::Evaluate(const std::string& expression, std::string& errorMessage) {
 	try {
+		std::string _expression = expression; //we do not want to change input data
+		//trim
+		_expression.erase(std::remove_if(_expression.begin(), _expression.end(), isspace), _expression.end());
+		//tolower case because for example sin = Sin = SIN
+		std::transform(_expression.begin(), _expression.end(), _expression.begin(), ::tolower);
+
 		int startIndex = 0;
-		return _Evaluate(expression, startIndex);
+		int braceCount = 0;
+		float value = _Evaluate(_expression, startIndex, braceCount);
+
+		if (braceCount != 0)
+			throw BracesException();
+
+		return value;
 	}
 	catch (CalculatorException& e) {
 		errorMessage = e.what();
@@ -30,41 +42,39 @@ Calculator::Evaluate(const std::string& expression, std::string& errorMessage) {
 
 /*static*/
 float
-Calculator::_Evaluate(const std::string& expression, int& index) {
-	std::string _expression = expression; //we do not want to change input data
-	//trim
-	_expression.erase(std::remove_if(_expression.begin(), _expression.end(), isspace), _expression.end());
-	//tolower case because for example sin = Sin = SIN
-	std::transform(_expression.begin(), _expression.end(), _expression.begin(), ::tolower);
-
+Calculator::_Evaluate(const std::string& expression, int& index, int& braceCount) {
 	std::vector<float> numbers;
 	std::vector<OPERATION_TYPE> operations;
 
 	bool isPriorityOperationPending = false;
 	std::string number_str;
 	std::string operation_str;
-	for (index; index < _expression.length(); ++index) {
-		if (isdigit(_expression[index]) || _expression[index] == '.')
-			number_str.push_back(_expression[index]);
+	for (index; index < expression.length(); ++index) {
+		if (isdigit(expression[index]) || expression[index] == '.')
+			number_str.push_back(expression[index]);
 		else {
-			if (_expression[index] == '(') {
-				_AddNumber(_Evaluate(_expression, ++index), numbers, operations, isPriorityOperationPending);
+			if (expression[index] == '(') {
+				_AddNumber(_Evaluate(expression, ++index, braceCount), numbers, operations, isPriorityOperationPending);
 				++index;
-				if (index == _expression.length())
+				--braceCount;
+				if (index >= expression.length())
 					break;
 			}
 			else
 				_AddNumber(number_str, numbers, operations, isPriorityOperationPending);
 
-			if (_expression[index] == ')')
+			if (expression[index] == ')') {
+				++braceCount;
 				break;
+			}
 
-			OPERATION_TYPE operation = Calculator::_ParseSymbolOperation(_expression[index]);
+
+			OPERATION_TYPE operation = Calculator::_ParseSymbolOperation(expression[index]);
 			if (operation == UKNOWN) {
 				//this is not symbol operation. Ok. Maybe it is key-word operation  then?
 				//parse until next digit
-				while (index != _expression.length() && _expression[index] != '(' && _expression[index] != '.' && !isdigit(_expression[index])) {
-					operation_str.push_back(_expression[index]);
+				while (index != expression.length() && expression[index] != '(' && expression[index] != '.' && !isdigit(expression[index])) {
+					operation_str.push_back(expression[index]);
 					++index;
 				}
 				--index;
@@ -77,22 +87,21 @@ Calculator::_Evaluate(const std::string& expression, int& index) {
 			}
 
 			operations.push_back(operation);
-			
+
 			if (numbers.size() == 0) {
 				if (!_IsUnaryOperation(operation) && operation != SUBSTRACTION)
 					//We have binary operation but do not have left operand. Obviously an input data error
-					throw ParseException(index); 
+					throw ParseException(index);
 				else if (operation == SUBSTRACTION)
 					numbers.push_back(0.0f);
 			}
-				
+
 
 			if (_IsHighPriorityOperation(operation)) {
 				isPriorityOperationPending = true;
 			}
 		}
 	}
-
 	Calculator::_AddNumber(number_str, numbers, operations, isPriorityOperationPending);
 
 	//vectors contains only numbers and simple binary operations

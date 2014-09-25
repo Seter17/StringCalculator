@@ -48,3 +48,11 @@ public:
 protected:
 	virtual std::string GetMessage() const { return "Wrong expression format"; }
 };
+
+class BracesException : public CalculatorException {
+public:
+	BracesException() : CalculatorException(-1) {}
+	virtual ~BracesException() {}
+protected:
+	virtual std::string GetMessage() const { return "Braces do not match"; }
+};
